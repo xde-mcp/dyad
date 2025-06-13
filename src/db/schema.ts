@@ -1,5 +1,11 @@
 import { sql } from "drizzle-orm";
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  sqliteTable,
+  text,
+  index,
+  unique,
+} from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 export const apps = sqliteTable("apps", {
@@ -16,6 +22,9 @@ export const apps = sqliteTable("apps", {
   githubRepo: text("github_repo"),
   githubBranch: text("github_branch"),
   supabaseProjectId: text("supabase_project_id"),
+  neonProjectId: text("neon_project_id"),
+  neonDevelopmentBranchId: text("neon_development_branch_id"),
+  neonPreviewBranchId: text("neon_preview_branch_id"),
   vercelProjectId: text("vercel_project_id"),
   vercelProjectName: text("vercel_project_name"),
   vercelTeamId: text("vercel_team_id"),
@@ -30,6 +39,7 @@ export const chats = sqliteTable("chats", {
     .references(() => apps.id, { onDelete: "cascade" }),
   title: text("title"),
   initialCommitHash: text("initial_commit_hash"),
+  dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -46,6 +56,7 @@ export const messages = sqliteTable("messages", {
     enum: ["approved", "rejected"],
   }),
   commitHash: text("commit_hash"),
+  dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -54,6 +65,8 @@ export const messages = sqliteTable("messages", {
 // Define relations
 export const appsRelations = relations(apps, ({ many }) => ({
   chats: many(chats),
+  snapshots: many(snapshots),
+  favorites: many(favorites),
 }));
 
 export const chatsRelations = relations(chats, ({ many, one }) => ({
@@ -124,3 +137,74 @@ export const languageModelsRelations = relations(
     }),
   }),
 );
+
+export const snapshots = sqliteTable(
+  "snapshots",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    appId: integer("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    commitHash: text("commit_hash").notNull(),
+    dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    // Unique constraint to prevent duplicate snapshots
+    unique("snapshots_app_commit_timestamp_unique").on(
+      table.appId,
+      table.commitHash,
+      table.dbTimestamp,
+    ),
+    // Performance indexes
+    index("snapshots_app_id_idx").on(table.appId),
+    index("snapshots_commit_hash_idx").on(table.commitHash),
+    index("snapshots_created_at_idx").on(table.createdAt),
+  ],
+);
+
+export const favorites = sqliteTable(
+  "favorites",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    appId: integer("app_id")
+      .notNull()
+      .references(() => apps.id, { onDelete: "cascade" }),
+    commitHash: text("commit_hash").notNull(),
+    neonBranchId: text("neon_branch_id"), // Optional Neon branch reference
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+    updatedAt: integer("updated_at", { mode: "timestamp" })
+      .notNull()
+      .default(sql`(unixepoch())`),
+  },
+  (table) => [
+    // Unique constraint to prevent duplicate favorites per app/commit
+    unique("favorites_app_commit_unique").on(table.appId, table.commitHash),
+    // Performance indexes
+    index("favorites_app_id_idx").on(table.appId),
+    index("favorites_commit_hash_idx").on(table.commitHash),
+  ],
+);
+
+// Define relations for snapshots
+export const snapshotsRelations = relations(snapshots, ({ one }) => ({
+  app: one(apps, {
+    fields: [snapshots.appId],
+    references: [apps.id],
+  }),
+}));
+
+// Define relations for favorites
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  app: one(apps, {
+    fields: [favorites.appId],
+    references: [apps.id],
+  }),
+}));

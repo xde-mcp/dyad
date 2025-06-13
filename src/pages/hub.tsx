@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "@tanstack/react-router";
@@ -7,7 +7,6 @@ import { useTemplates } from "@/hooks/useTemplates";
 import { TemplateCard } from "@/components/TemplateCard";
 
 const HubPage: React.FC = () => {
-  const { settings, updateSettings } = useSettings();
   const router = useRouter();
   const { templates, isLoading } = useTemplates();
 
@@ -25,7 +24,7 @@ const HubPage: React.FC = () => {
 
   return (
     <div className="min-h-screen px-8 py-4">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto pb-12">
         <Button
           onClick={() => router.history.back()}
           variant="outline"
@@ -83,8 +82,40 @@ const HubPage: React.FC = () => {
           </section>
         )}
       </div>
+    );
+  }
+  return (
+    <div className="pt-3 border-gray-200 dark:border-gray-700">
+      <Button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleCreateApp(template.id);
+        }}
+        size="sm"
+        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+      >
+        Create App
+      </Button>
     </div>
   );
-};
+}
+function BackendSection() {
+  return (
+    <>
+      <header className="mb-4 text-left mt-12">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Backend Services
+        </h1>
+        <p className="text-md text-gray-600 dark:text-gray-400">
+          Connect to backend services for your projects.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 gap-6">
+        <NeonConnector />
+      </div>
+    </>
+  );
+}
 
 export default HubPage;
