@@ -26,6 +26,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   enableAutoFixProblems: false,
   enableAutoUpdate: true,
   releaseChannel: "stable",
+  runtimeMode2: "host",
 };
 
 const SETTINGS_FILE = "user-settings.json";
