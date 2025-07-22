@@ -1,7 +1,7 @@
 import { createLoggedHandler } from "./safe_handle";
 import log from "electron-log";
 import { getAllTemplates } from "../utils/template_utils";
-import type { Template } from "../../shared/templates";
+import { localTemplatesData, type Template } from "../../shared/templates";
 
 const logger = log.scope("template_handlers");
 const handle = createLoggedHandler(logger);
@@ -13,7 +13,7 @@ export function registerTemplateHandlers() {
       return templates;
     } catch (error) {
       logger.error("Error fetching templates:", error);
-      throw new Error(`Failed to fetch templates: ${error}`);
+      return localTemplatesData;
     }
   });
 }

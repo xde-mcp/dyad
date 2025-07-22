@@ -1,26 +1,8 @@
-import type { Template, ApiTemplate } from "../../shared/templates";
-
-export const DEFAULT_TEMPLATE_ID = "react";
-
-export const localTemplatesData: Template[] = [
-  {
-    id: "react",
-    title: "React.js Template",
-    description: "Uses React.js, Vite, Shadcn, Tailwind and TypeScript.",
-    imageUrl:
-      "https://github.com/user-attachments/assets/5b700eab-b28c-498e-96de-8649b14c16d9",
-    isOfficial: true,
-  },
-  {
-    id: "next",
-    title: "Next.js Template",
-    description: "Uses Next.js, React.js, Shadcn, Tailwind and TypeScript.",
-    imageUrl:
-      "https://github.com/user-attachments/assets/96258e4f-abce-4910-a62a-a9dff77965f2",
-    githubUrl: "https://github.com/dyad-sh/nextjs-template",
-    isOfficial: true,
-  },
-];
+import {
+  type Template,
+  type ApiTemplate,
+  localTemplatesData,
+} from "../../shared/templates";
 
 // In-memory cache for API templates
 let apiTemplatesCache: Template[] | null = null;
@@ -29,7 +11,7 @@ let apiTemplatesFetchPromise: Promise<Template[]> | null = null;
 // Convert API template to our Template interface
 function convertApiTemplate(apiTemplate: ApiTemplate): Template {
   return {
-    id: `${apiTemplate.githubOrg}-${apiTemplate.githubRepo}`,
+    id: `${apiTemplate.githubOrg}/${apiTemplate.githubRepo}`,
     title: apiTemplate.title,
     description: apiTemplate.description,
     imageUrl: apiTemplate.imageUrl,
@@ -81,21 +63,6 @@ export async function fetchApiTemplates(): Promise<Template[]> {
 export async function getAllTemplates(): Promise<Template[]> {
   const apiTemplates = await fetchApiTemplates();
   return [...localTemplatesData, ...apiTemplates];
-}
-
-// Get templates synchronously (only local templates)
-export function getLocalTemplates(): Template[] {
-  return localTemplatesData;
-}
-
-export function getTemplateOrThrow(templateId: string): Template {
-  const template = localTemplatesData.find(
-    (template) => template.id === templateId,
-  );
-  if (!template) {
-    throw new Error(`Template ${templateId} not found`);
-  }
-  return template;
 }
 
 export async function getTemplateOrThrowAsync(

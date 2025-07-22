@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { IpcClient } from "@/ipc/ipc_client";
-import { getLocalTemplates } from "@/ipc/utils/template_utils";
-import type { Template } from "@/shared/templates";
+import { localTemplatesData, type Template } from "@/shared/templates";
 
 export function useTemplates() {
   const query = useQuery({
@@ -10,7 +9,7 @@ export function useTemplates() {
       const ipcClient = IpcClient.getInstance();
       return ipcClient.getTemplates();
     },
-    initialData: getLocalTemplates(),
+    initialData: localTemplatesData,
     meta: {
       showErrorToast: true,
     },
