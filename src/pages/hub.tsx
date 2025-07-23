@@ -5,17 +5,23 @@ import { useRouter } from "@tanstack/react-router";
 import { useSettings } from "@/hooks/useSettings";
 import { useTemplates } from "@/hooks/useTemplates";
 import { TemplateCard } from "@/components/TemplateCard";
+import { CreateAppDialog } from "@/components/CreateAppDialog";
+import { NeonConnector } from "@/components/NeonConnector";
 
 const HubPage: React.FC = () => {
   const router = useRouter();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const { templates, isLoading } = useTemplates();
-
+  const { settings, updateSettings } = useSettings();
   const selectedTemplateId = settings?.selectedTemplateId;
 
   const handleTemplateSelect = (templateId: string) => {
     updateSettings({ selectedTemplateId: templateId });
   };
 
+  const handleCreateApp = () => {
+    setIsCreateDialogOpen(true);
+  };
   // Separate templates into official and community
   const officialTemplates =
     templates?.filter((template) => template.isOfficial) || [];
@@ -57,6 +63,7 @@ const HubPage: React.FC = () => {
                   template={template}
                   isSelected={template.id === selectedTemplateId}
                   onSelect={handleTemplateSelect}
+                  onCreateApp={handleCreateApp}
                 />
               ))}
             </div>
@@ -76,33 +83,29 @@ const HubPage: React.FC = () => {
                   template={template}
                   isSelected={template.id === selectedTemplateId}
                   onSelect={handleTemplateSelect}
+                  onCreateApp={handleCreateApp}
                 />
               ))}
             </div>
           </section>
         )}
+
+        <BackendSection />
       </div>
-    );
-  }
-  return (
-    <div className="pt-3 border-gray-200 dark:border-gray-700">
-      <Button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleCreateApp(template.id);
-        }}
-        size="sm"
-        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
-      >
-        Create App
-      </Button>
+
+      <CreateAppDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        template={templates.find((t) => t.id === settings?.selectedTemplateId)}
+      />
     </div>
   );
-}
+};
+
 function BackendSection() {
   return (
-    <>
-      <header className="mb-4 text-left mt-12">
+    <div className="">
+      <header className="mb-4 text-left">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
           Backend Services
         </h1>
@@ -114,7 +117,7 @@ function BackendSection() {
       <div className="grid grid-cols-1 gap-6">
         <NeonConnector />
       </div>
-    </>
+    </div>
   );
 }
 
