@@ -2,7 +2,6 @@ import {
   type Template,
   type ApiTemplate,
   localTemplatesData,
-  DEFAULT_TEMPLATE,
 } from "../../shared/templates";
 import log from "electron-log";
 
@@ -69,14 +68,15 @@ export async function getAllTemplates(): Promise<Template[]> {
   return [...localTemplatesData, ...apiTemplates];
 }
 
-export async function getTemplateOrDefault(
+export async function getTemplateOrThrow(
   templateId: string,
 ): Promise<Template> {
   const allTemplates = await getAllTemplates();
   const template = allTemplates.find((template) => template.id === templateId);
   if (!template) {
-    logger.warn(`Template ${templateId} not found, using default template`);
-    return DEFAULT_TEMPLATE;
+    throw new Error(
+      `Template ${templateId} not found. Please select a different template.`,
+    );
   }
   return template;
 }
