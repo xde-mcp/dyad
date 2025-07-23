@@ -4,6 +4,7 @@ import { IpcClient } from "@/ipc/ipc_client";
 import { useSettings } from "@/hooks/useSettings";
 import { CommunityCodeConsentDialog } from "./CommunityCodeConsentDialog";
 import type { Template } from "@/shared/templates";
+import { Button } from "./ui/button";
 
 interface TemplateCardProps {
   template: Template;
@@ -121,6 +122,18 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
               <ArrowLeft className="w-4 h-4 ml-1 transform rotate-180" />
             </a>
           )}
+        </div>
+        <div className="pt-3 border-gray-200 dark:border-gray-700">
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCreateApp(template.id);
+            }}
+            size="sm"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold"
+          >
+            Create App
+          </Button>
         </div>
       </div>
 
