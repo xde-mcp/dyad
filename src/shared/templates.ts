@@ -17,16 +17,17 @@ export interface ApiTemplate {
 }
 
 export const DEFAULT_TEMPLATE_ID = "react";
+export const DEFAULT_TEMPLATE = {
+  id: "react",
+  title: "React.js Template",
+  description: "Uses React.js, Vite, Shadcn, Tailwind and TypeScript.",
+  imageUrl:
+    "https://github.com/user-attachments/assets/5b700eab-b28c-498e-96de-8649b14c16d9",
+  isOfficial: true,
+};
 
 export const localTemplatesData: Template[] = [
-  {
-    id: "react",
-    title: "React.js Template",
-    description: "Uses React.js, Vite, Shadcn, Tailwind and TypeScript.",
-    imageUrl:
-      "https://github.com/user-attachments/assets/5b700eab-b28c-498e-96de-8649b14c16d9",
-    isOfficial: true,
-  },
+  DEFAULT_TEMPLATE,
   {
     id: "next",
     title: "Next.js Template",

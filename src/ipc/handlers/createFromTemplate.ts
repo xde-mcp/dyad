@@ -5,7 +5,7 @@ import http from "isomorphic-git/http/node";
 import { app } from "electron";
 import { copyDirectoryRecursive } from "../utils/file_utils";
 import { readSettings } from "@/main/settings";
-import { getTemplateOrThrowAsync } from "../utils/template_utils";
+import { getTemplateOrDefault } from "../utils/template_utils";
 import log from "electron-log";
 
 const logger = log.scope("createFromTemplate");
@@ -26,7 +26,7 @@ export async function createFromTemplate({
     return;
   }
 
-  const template = await getTemplateOrThrowAsync(templateId);
+  const template = await getTemplateOrDefault(templateId);
   if (!template.githubUrl) {
     throw new Error(`Template ${templateId} has no GitHub URL`);
   }

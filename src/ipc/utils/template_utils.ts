@@ -2,7 +2,11 @@ import {
   type Template,
   type ApiTemplate,
   localTemplatesData,
+  DEFAULT_TEMPLATE,
 } from "../../shared/templates";
+import log from "electron-log";
+
+const logger = log.scope("template_utils");
 
 // In-memory cache for API templates
 let apiTemplatesCache: Template[] | null = null;
@@ -49,7 +53,7 @@ export async function fetchApiTemplates(): Promise<Template[]> {
       apiTemplatesCache = convertedTemplates;
       return convertedTemplates;
     } catch (error) {
-      console.error("Failed to fetch API templates:", error);
+      logger.error("Failed to fetch API templates:", error);
       // Reset the promise so we can retry later
       apiTemplatesFetchPromise = null;
       return []; // Return empty array on error
@@ -65,13 +69,14 @@ export async function getAllTemplates(): Promise<Template[]> {
   return [...localTemplatesData, ...apiTemplates];
 }
 
-export async function getTemplateOrThrowAsync(
+export async function getTemplateOrDefault(
   templateId: string,
 ): Promise<Template> {
   const allTemplates = await getAllTemplates();
   const template = allTemplates.find((template) => template.id === templateId);
   if (!template) {
-    throw new Error(`Template ${templateId} not found`);
+    logger.warn(`Template ${templateId} not found, using default template`);
+    return DEFAULT_TEMPLATE;
   }
   return template;
 }
