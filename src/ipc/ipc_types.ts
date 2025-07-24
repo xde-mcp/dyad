@@ -366,7 +366,7 @@ export interface NeonProject {
 }
 
 export interface NeonBranch {
-  type: "production" | "development" | "snapshot";
+  type: "production" | "development" | "snapshot" | "preview";
   branchId: string;
   branchName: string;
   lastUpdated: string; // ISO timestamp
