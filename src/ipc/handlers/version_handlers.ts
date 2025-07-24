@@ -31,6 +31,7 @@ async function restoreBranch({
   neonProjectId,
   branchIdToUpdate,
   preserve,
+  versionMaybeNotFound,
 }: {
   appId: number;
   targetCommitHash: string;
@@ -40,6 +41,7 @@ async function restoreBranch({
     branchName: string;
     commitHash: string;
   };
+  versionMaybeNotFound?: boolean;
 }): Promise<void> {
   try {
     const targetVersion = await db.query.versions.findFirst({
@@ -50,6 +52,10 @@ async function restoreBranch({
     });
 
     if (!targetVersion) {
+      if (versionMaybeNotFound) {
+        // In some cases it's OK if we don't find the version.
+        return;
+      }
       throw new Error(`Version ${targetCommitHash} not found`);
     }
 
@@ -204,7 +210,6 @@ export function registerVersionHandlers() {
 
     return commits.map((commit: ReadCommitResult) => {
       const snapshotInfo = snapshotMap.get(commit.oid);
-      console.log("snapshotInfo", snapshotInfo);
       return {
         oid: commit.oid,
         message: commit.commit.message,
@@ -429,6 +434,7 @@ export function registerVersionHandlers() {
               targetCommitHash: versionId,
               neonProjectId: app.neonProjectId,
               branchIdToUpdate: app.neonPreviewBranchId,
+              versionMaybeNotFound: true,
             });
           }
         }
