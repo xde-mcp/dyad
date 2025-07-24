@@ -3,7 +3,7 @@ import { selectedAppIdAtom, selectedVersionIdAtom } from "@/atoms/appAtoms";
 import { useVersions } from "@/hooks/useVersions";
 import { useFavorites } from "@/hooks/useFavorites";
 import { formatDistanceToNow } from "date-fns";
-import { RotateCcw, X, Star, Database } from "lucide-react";
+import { RotateCcw, X, Star, Database, Loader2 } from "lucide-react";
 import type { Version } from "@/ipc/ipc_types";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useRunApp } from "@/hooks/useRunApp";
 
 interface VersionPaneProps {
   isVisible: boolean;
@@ -23,10 +24,12 @@ interface VersionPaneProps {
 export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
   const appId = useAtomValue(selectedAppIdAtom);
   const { refreshApp } = useLoadApp(appId);
+  const { restartApp } = useRunApp();
   const {
     versions: liveVersions,
     refreshVersions,
     revertVersion,
+    isRevertingVersion,
   } = useVersions(appId);
   const { markFavorite, unmarkFavorite, isUpdatingFavorite } =
     useFavorites(appId);
@@ -79,11 +82,14 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
     return null;
   }
 
-  const handleVersionClick = async (versionOid: string) => {
+  const handleVersionClick = async (version: Version) => {
     if (appId) {
-      setSelectedVersionId(versionOid);
+      setSelectedVersionId(version.oid);
       try {
-        await checkoutVersion({ appId, versionId: versionOid });
+        await checkoutVersion({ appId, versionId: version.oid });
+        if (version.hasDbSnapshot) {
+          await restartApp();
+        }
       } catch (error) {
         console.error("Could not checkout version, unselecting version", error);
         setSelectedVersionId(null);
@@ -124,7 +130,7 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                 )}
                 onClick={() => {
                   if (!isCheckingOutVersion) {
-                    handleVersionClick(version.oid);
+                    handleVersionClick(version);
                   }
                 }}
               >
@@ -147,11 +153,25 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                       </Tooltip>
                     )}
                   </div>
-                  <span className="text-xs opacity-90">
-                    {formatDistanceToNow(new Date(version.timestamp * 1000), {
-                      addSuffix: true,
-                    })}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {isCheckingOutVersion &&
+                      selectedVersionId === version.oid && (
+                        <Loader2
+                          size={12}
+                          className="animate-spin text-primary"
+                        />
+                      )}
+                    <span className="text-xs opacity-90">
+                      {isCheckingOutVersion && selectedVersionId === version.oid
+                        ? "Loading..."
+                        : formatDistanceToNow(
+                            new Date(version.timestamp * 1000),
+                            {
+                              addSuffix: true,
+                            },
+                          )}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   {version.message && (
@@ -229,20 +249,36 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                             await revertVersion({
                               versionId: version.oid,
                             });
+                            if (version.hasDbSnapshot) {
+                              await restartApp();
+                            }
                             // Close the pane after revert to force a refresh on next open
                             onClose();
                           }}
+                          disabled={isRevertingVersion}
                           className={cn(
                             "invisible mt-1 flex items-center gap-1 px-2 py-0.5 text-sm font-medium bg-(--primary) text-(--primary-foreground) hover:bg-background-lightest rounded-md transition-colors",
                             selectedVersionId === version.oid && "visible",
+                            isRevertingVersion &&
+                              "opacity-50 cursor-not-allowed",
                           )}
                           aria-label="Restore to this version"
                         >
-                          <RotateCcw size={12} />
-                          <span>Restore</span>
+                          {isRevertingVersion ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <RotateCcw size={12} />
+                          )}
+                          <span>
+                            {isRevertingVersion ? "Restoring..." : "Restore"}
+                          </span>
                         </button>
                       </TooltipTrigger>
-                      <TooltipContent>Restore to this version</TooltipContent>
+                      <TooltipContent>
+                        {isRevertingVersion
+                          ? "Restoring to this version..."
+                          : "Restore to this version"}
+                      </TooltipContent>
                     </Tooltip>
                   </div>
                 </div>

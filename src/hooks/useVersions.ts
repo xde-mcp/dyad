@@ -74,5 +74,6 @@ export function useVersions(appId: number | null) {
     error,
     refreshVersions,
     revertVersion: revertVersionMutation.mutateAsync,
+    isRevertingVersion: revertVersionMutation.isPending,
   };
 }
