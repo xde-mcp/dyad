@@ -1,111 +1,61 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { IpcClient } from "@/ipc/ipc_client";
-import type { Favorite } from "@/ipc/ipc_types";
 import { showError } from "@/lib/toast";
 
 export function useFavorites(appId: number | null) {
   const queryClient = useQueryClient();
-
-  // Query for listing favorites
-  const {
-    data: favorites = [],
-    isLoading,
-    error,
-    refetch: refreshFavorites,
-  } = useQuery({
-    queryKey: ["favorites", appId],
-    queryFn: async () => {
-      if (!appId) return [];
-      const ipcClient = IpcClient.getInstance();
-      return ipcClient.listFavorites({ appId });
-    },
-    enabled: appId !== null,
-    meta: { showErrorToast: true },
-  });
-
-  // Mutation for creating a favorite
-  const createFavoriteMutation = useMutation({
-    mutationFn: async (params: {
-      commitHash: string;
-      neonBranchId?: string;
-    }) => {
+  // Mutation for marking a favorite
+  const markFavoriteMutation = useMutation({
+    mutationFn: async (params: { commitHash: string }) => {
       if (!appId) throw new Error("App ID is required");
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.createFavorite({
+      return ipcClient.markFavorite({
         appId,
         commitHash: params.commitHash,
-        neonBranchId: params.neonBranchId,
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorites", appId] });
+      queryClient.invalidateQueries({ queryKey: ["versions", appId] });
     },
     onError: (error) => {
       showError(error);
     },
   });
 
-  // Mutation for deleting a favorite
-  const deleteFavoriteMutation = useMutation({
-    mutationFn: async (favoriteId: number) => {
+  // Mutation for unmarking a favorite
+  const unmarkFavoriteMutation = useMutation({
+    mutationFn: async (params: { commitHash: string }) => {
+      if (!appId) throw new Error("App ID is required");
       const ipcClient = IpcClient.getInstance();
-      return ipcClient.deleteFavorite({ favoriteId });
+      return ipcClient.unmarkFavorite({
+        appId,
+        commitHash: params.commitHash,
+      });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorites", appId] });
+      queryClient.invalidateQueries({ queryKey: ["versions", appId] });
     },
     onError: (error) => {
       showError(error);
     },
   });
 
-  // Helper function to check if a commit hash is favorited
-  const isFavorited = (commitHash: string): boolean => {
-    return favorites.some((favorite) => favorite.commitHash === commitHash);
+  // Helper function to mark a favorite
+  const markFavorite = async (commitHash: string) => {
+    return markFavoriteMutation.mutateAsync({ commitHash });
   };
 
-  // Helper function to get favorite by commit hash
-  const getFavoriteByCommitHash = (
-    commitHash: string,
-  ): Favorite | undefined => {
-    return favorites.find((favorite) => favorite.commitHash === commitHash);
-  };
-
-  // Helper function to create a favorite
-  const createFavorite = async (commitHash: string) => {
-    return createFavoriteMutation.mutateAsync({ commitHash });
-  };
-
-  // Helper function to delete a favorite
-  const deleteFavorite = async (commitHash: string) => {
-    const favorite = getFavoriteByCommitHash(commitHash);
-    if (favorite) {
-      return deleteFavoriteMutation.mutateAsync(favorite.id);
-    }
-  };
-
-  // Helper function to toggle favorite status
-  const toggleFavorite = async (commitHash: string, neonBranchId?: string) => {
-    if (isFavorited(commitHash)) {
-      await deleteFavorite(commitHash);
-    } else {
-      await createFavorite(commitHash);
-    }
+  // Helper function to unmark a favorite
+  const unmarkFavorite = async (commitHash: string) => {
+    return unmarkFavoriteMutation.mutateAsync({ commitHash });
   };
 
   return {
-    favorites,
-    isLoading,
-    error,
-    refreshFavorites,
-    isFavorited,
-    getFavoriteByCommitHash,
-    createFavorite,
-    deleteFavorite,
-    toggleFavorite,
-    isCreatingFavorite: createFavoriteMutation.isPending,
-    isDeletingFavorite: deleteFavoriteMutation.isPending,
+    markFavorite,
+    unmarkFavorite,
+    isMarkingFavorite: markFavoriteMutation.isPending,
+    isUnmarkingFavorite: unmarkFavoriteMutation.isPending,
     isUpdatingFavorite:
-      createFavoriteMutation.isPending || deleteFavoriteMutation.isPending,
+      markFavoriteMutation.isPending || unmarkFavoriteMutation.isPending,
   };
 }

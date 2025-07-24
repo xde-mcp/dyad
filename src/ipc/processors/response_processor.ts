@@ -26,8 +26,8 @@ import {
   getDyadAddDependencyTags,
   getDyadExecuteSqlTags,
 } from "../utils/dyad_tag_parser";
-import { retrieveAndStoreTimestamp } from "../utils/neon_lsn_utils";
-import { readPostgresUrlFromEnvFile } from "../utils/app_env_var_utils";
+import { storeBranchAtCurrentVersion } from "../utils/neon_store_branch_utils";
+
 import { FileUploadsState } from "../utils/file_uploads_state";
 
 const readFile = fs.promises.readFile;
@@ -86,23 +86,17 @@ export async function processFullResponseActions(
     chatWithApp.app.neonProjectId &&
     chatWithApp.app.neonDevelopmentBranchId
   ) {
-    // GET THE TIMESTAMP AND PUT IT IN
+    // CREATE NEON BRANCH AT CURRENT VERSION
     try {
-      const neonConnectionUri = await readPostgresUrlFromEnvFile({
-        appPath: chatWithApp.app.path,
-      });
-      await retrieveAndStoreTimestamp({
-        chatId,
-        messageId,
+      await storeBranchAtCurrentVersion({
         appId: chatWithApp.app.id,
         neonProjectId: chatWithApp.app.neonProjectId,
         neonBranchId: chatWithApp.app.neonDevelopmentBranchId,
-        neonConnectionUri,
       });
     } catch (error) {
-      logger.error("Error retrieving and storing timestamp:", error);
+      logger.error("Error creating Neon branch at current version:", error);
       throw new Error(
-        "Could not store timestamp in chat; database backup functionality is not working: " +
+        "Could not create Neon branch; database versioning functionality is not working: " +
           error,
       );
     }
