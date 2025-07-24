@@ -139,6 +139,47 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                     <span className="font-medium text-xs">
                       Version {versions.length - index}
                     </span>
+                    {/* Star button for favorites */}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!isUpdatingFavorite) {
+                              if (version.isFavorite) {
+                                await unmarkFavorite(version.oid);
+                              } else {
+                                await markFavorite(version.oid);
+                              }
+                            }
+                          }}
+                          disabled={isUpdatingFavorite}
+                          className={cn(
+                            "p-1 rounded-md transition-colors hover:bg-(--background-lightest)",
+                            version.isFavorite
+                              ? "text-yellow-500"
+                              : "text-gray-400 hover:text-yellow-500",
+                            isUpdatingFavorite &&
+                              "opacity-50 cursor-not-allowed",
+                          )}
+                          aria-label={
+                            version.isFavorite
+                              ? "Remove from favorites"
+                              : "Add to favorites"
+                          }
+                        >
+                          <Star
+                            size={14}
+                            fill={version.isFavorite ? "currentColor" : "none"}
+                          />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {version.isFavorite
+                          ? "Remove from favorites"
+                          : "Add to favorites"}
+                      </TooltipContent>
+                    </Tooltip>
                     {version.hasDbSnapshot && (
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -197,48 +238,6 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                   )}
 
                   <div className="flex items-center gap-1">
-                    {/* Star button for favorites */}
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (!isUpdatingFavorite) {
-                              if (version.isFavorite) {
-                                await unmarkFavorite(version.oid);
-                              } else {
-                                await markFavorite(version.oid);
-                              }
-                            }
-                          }}
-                          disabled={isUpdatingFavorite}
-                          className={cn(
-                            "p-1 rounded-md transition-colors hover:bg-(--background-lightest)",
-                            version.isFavorite
-                              ? "text-yellow-500"
-                              : "text-gray-400 hover:text-yellow-500",
-                            isUpdatingFavorite &&
-                              "opacity-50 cursor-not-allowed",
-                          )}
-                          aria-label={
-                            version.isFavorite
-                              ? "Remove from favorites"
-                              : "Add to favorites"
-                          }
-                        >
-                          <Star
-                            size={14}
-                            fill={version.isFavorite ? "currentColor" : "none"}
-                          />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {version.isFavorite
-                          ? "Remove from favorites"
-                          : "Add to favorites"}
-                      </TooltipContent>
-                    </Tooltip>
-
                     {/* Restore button */}
                     <Tooltip>
                       <TooltipTrigger asChild>
