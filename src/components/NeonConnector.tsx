@@ -3,13 +3,7 @@ import { Button } from "@/components/ui/button";
 import { IpcClient } from "@/ipc/ipc_client";
 import { toast } from "sonner";
 import { useSettings } from "@/hooks/useSettings";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
 import { useDeepLink } from "@/contexts/DeepLinkContext";
 import { ExternalLink } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -32,10 +26,10 @@ export function NeonConnector() {
 
   if (settings?.neon?.accessToken) {
     return (
-      <Card className="mt-1">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            Neon Database Connection{" "}
+      <div className="flex flex-col space-y-4 p-4 border bg-white dark:bg-gray-800 max-w-100 rounded-md">
+        <div className="flex flex-col items-start justify-between">
+          <div className="flex items-center justify-between w-full">
+            <h2 className="text-lg font-medium pb-1">Neon Database</h2>
             <Button
               variant="outline"
               onClick={() => {
@@ -43,22 +37,22 @@ export function NeonConnector() {
                   "https://console.neon.tech/",
                 );
               }}
-              className="ml-2 px-2 py-1 h-8"
+              className="ml-2 px-2 py-1 h-8 mb-2"
               style={{ display: "inline-flex", alignItems: "center" }}
               asChild
             >
               <div className="flex items-center gap-1">
-                <NeonSvg isDarkMode={isDarkMode} className="h-4 w-4" />
+                Neon
                 <ExternalLink className="h-3 w-3" />
               </div>
             </Button>
-          </CardTitle>
-          <CardDescription>You are connected to Neon Database</CardDescription>
-        </CardHeader>
-        <CardContent>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 pb-3">
+            You are connected to Neon Database
+          </p>
           <NeonDisconnectButton />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
