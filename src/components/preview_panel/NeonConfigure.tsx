@@ -7,6 +7,7 @@ import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { useLoadApp } from "@/hooks/useLoadApp";
 import { IpcClient } from "@/ipc/ipc_client";
 import type { GetNeonProjectResponse, NeonBranch } from "@/ipc/ipc_types";
+import { NeonDisconnectButton } from "@/components/NeonDisconnectButton";
 
 const getBranchTypeColor = (type: NeonBranch["type"]) => {
   switch (type) {
@@ -101,9 +102,12 @@ export const NeonConfigure = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database size={20} />
-          Neon Database
+        <CardTitle className="flex items-center gap-2 justify-between">
+          <div className="flex items-center gap-2">
+            <Database size={20} />
+            Neon Database
+          </div>
+          <NeonDisconnectButton />
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -161,6 +165,9 @@ export const NeonConfigure = () => {
             ))}
           </div>
         </div>
+
+        {/* Disconnect Button */}
+        <div className="pt-4 border-t"></div>
       </CardContent>
     </Card>
   );
