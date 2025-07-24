@@ -237,12 +237,14 @@ export function registerNeonHandlers() {
         // Map branches to our format
         const branches: NeonBranch[] = branchesResponse.data.branches.map(
           (branch) => {
-            let type: "production" | "development" | "snapshot";
+            let type: "production" | "development" | "snapshot" | "preview";
 
             if (branch.default) {
               type = "production";
             } else if (branch.id === appData.neonDevelopmentBranchId) {
               type = "development";
+            } else if (branch.id === appData.neonPreviewBranchId) {
+              type = "preview";
             } else {
               type = "snapshot";
             }

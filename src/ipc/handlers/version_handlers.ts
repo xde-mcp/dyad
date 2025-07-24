@@ -454,6 +454,7 @@ export function registerVersionHandlers() {
       { appId, commitHash }: { appId: number; commitHash: string },
     ): Promise<void> => {
       return withLock(appId, async () => {
+        const userFriendlyCommitHash = commitHash.slice(0, 7);
         const app = await db.query.apps.findFirst({
           where: eq(apps.id, appId),
         });
@@ -487,7 +488,7 @@ export function registerVersionHandlers() {
 
         if (app.neonProjectId && wouldExceedLimit) {
           throw new Error(
-            `Cannot mark version ${commitHash} as favorite: Maximum of 3 favorite versions with Neon branches allowed. Currently have ${favoriteVersionsWithNeonBranch.length} favorite versions.`,
+            `Cannot mark version ${userFriendlyCommitHash} as favorite: Maximum of 3 favorite versions with Neon branches allowed. Currently have ${favoriteVersionsWithNeonBranch.length} favorite versions.`,
           );
         }
 
@@ -497,7 +498,7 @@ export function registerVersionHandlers() {
           // If marking as favorite and there is no Neon branch associated, throw an error
           if (app.neonProjectId && !existingVersion.neonBranchId) {
             throw new Error(
-              `Cannot mark version ${commitHash} as favorite: No Neon branch associated with this version`,
+              `Cannot mark version ${userFriendlyCommitHash} as favorite: No Neon branch associated with this version`,
             );
           }
 
