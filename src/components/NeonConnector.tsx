@@ -13,9 +13,10 @@ import {
 import { useDeepLink } from "@/contexts/DeepLinkContext";
 import { ExternalLink } from "lucide-react";
 import { useTheme } from "@/contexts/ThemeContext";
+import { NeonDisconnectButton } from "@/components/NeonDisconnectButton";
 
 export function NeonConnector() {
-  const { settings, refreshSettings, updateSettings } = useSettings();
+  const { settings, refreshSettings } = useSettings();
   const { lastDeepLink } = useDeepLink();
   const { isDarkMode } = useTheme();
 
@@ -28,19 +29,6 @@ export function NeonConnector() {
     };
     handleDeepLink();
   }, [lastDeepLink]);
-
-  const handleDisconnect = async () => {
-    try {
-      await updateSettings({
-        neon: undefined,
-      });
-      await refreshSettings();
-      toast.success("Disconnected from Neon successfully");
-    } catch (error) {
-      console.error("Failed to disconnect from Neon:", error);
-      toast.error("Failed to disconnect from Neon");
-    }
-  };
 
   if (settings?.neon?.accessToken) {
     return (
@@ -68,9 +56,7 @@ export function NeonConnector() {
           <CardDescription>You are connected to Neon Database</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="destructive" onClick={handleDisconnect}>
-            Disconnect
-          </Button>
+          <NeonDisconnectButton />
         </CardContent>
       </Card>
     );

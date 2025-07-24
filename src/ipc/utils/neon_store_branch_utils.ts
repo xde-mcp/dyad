@@ -106,6 +106,9 @@ export async function storeBranchAtCommitHash({
       if (oldestNonFavorite && oldestNonFavorite.neonBranchId) {
         try {
           // Delete the Neon branch
+          //
+          // Note: Neon prohibits deleting the default branch (which is production in our use case)
+          // or branches with children (which is development in our use case).
           await neonClient.deleteProjectBranch(
             neonProjectId,
             oldestNonFavorite.neonBranchId,

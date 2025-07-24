@@ -14,12 +14,12 @@ import { useCreateApp } from "@/hooks/useCreateApp";
 import { useCheckName } from "@/hooks/useCheckName";
 import { useSetAtom } from "jotai";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
-import { Template } from "@/shared/templates";
-import { IpcClient } from "@/ipc/ipc_client";
-import { v4 as uuidv4 } from "uuid";
+import { NEON_TEMPLATE_IDS, Template } from "@/shared/templates";
+
 import { useRouter } from "@tanstack/react-router";
-import { showError } from "@/lib/toast";
+
 import { Loader2 } from "lucide-react";
+import { neonTemplateHook } from "@/client_logic/template_hook";
 
 interface CreateAppDialogProps {
   open: boolean;
@@ -52,33 +52,11 @@ export function CreateAppDialog({
     setIsSubmitting(true);
     try {
       const result = await createApp({ name: appName.trim() });
-      if (template?.requiresNeon) {
-        try {
-          console.log("Creating Neon project");
-          const neonProject = await IpcClient.getInstance().createNeonProject({
-            name: appName.trim(),
-            appId: result.app.id,
-          });
-
-          console.log("Neon project created", neonProject);
-          await IpcClient.getInstance().setAppEnvVars({
-            appId: result.app.id,
-            envVars: [
-              {
-                key: "POSTGRES_URL",
-                value: neonProject.connectionString,
-              },
-              {
-                key: "PAYLOAD_SECRET",
-                value: uuidv4(),
-              },
-            ],
-          });
-          console.log("App env vars set");
-        } catch (error) {
-          showError(error as any);
-          throw error;
-        }
+      if (template && NEON_TEMPLATE_IDS.has(template.id)) {
+        await neonTemplateHook({
+          appId: result.app.id,
+          appName: result.app.name,
+        });
       }
       setSelectedAppId(result.app.id);
       // Navigate to the new app's first chat

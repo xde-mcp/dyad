@@ -24,7 +24,6 @@ import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { IpcClient } from "@/ipc/ipc_client";
 import { useNavigate } from "@tanstack/react-router";
 import { NeonConfigure } from "./NeonConfigure";
-import { NeonConnector } from "../NeonConnector";
 
 const EnvironmentVariablesTitle = () => (
   <div className="flex items-center gap-2">
@@ -403,7 +402,6 @@ export const ConfigurePanel = () => {
       {/* Neon Connector */}
       <div className="grid grid-cols-1 gap-6">
         <NeonConfigure />
-        <NeonConnector />
       </div>
     </div>
   );
