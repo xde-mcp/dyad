@@ -1,11 +1,5 @@
 import { sql } from "drizzle-orm";
-import {
-  integer,
-  sqliteTable,
-  text,
-  index,
-  unique,
-} from "drizzle-orm/sqlite-core";
+import { integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
 
 export const apps = sqliteTable("apps", {
@@ -39,7 +33,6 @@ export const chats = sqliteTable("chats", {
     .references(() => apps.id, { onDelete: "cascade" }),
   title: text("title"),
   initialCommitHash: text("initial_commit_hash"),
-  dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -56,7 +49,6 @@ export const messages = sqliteTable("messages", {
     enum: ["approved", "rejected"],
   }),
   commitHash: text("commit_hash"),
-  dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
@@ -149,7 +141,6 @@ export const versions = sqliteTable(
       .notNull()
       .default(false),
     neonBranchId: text("neon_branch_id"),
-    dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
       .default(sql`(unixepoch())`),
@@ -160,10 +151,6 @@ export const versions = sqliteTable(
   (table) => [
     // Unique constraint to prevent duplicate versions
     unique("versions_app_commit_unique").on(table.appId, table.commitHash),
-    // Performance indexes
-    index("versions_app_id_idx").on(table.appId),
-    index("versions_commit_hash_idx").on(table.commitHash),
-    index("versions_created_at_idx").on(table.createdAt),
   ],
 );
 
