@@ -103,6 +103,7 @@ export interface Version {
   message: string;
   timestamp: number;
   hasDbSnapshot?: boolean;
+  isFavorite: boolean;
 }
 
 export type BranchResult = { branch: string };

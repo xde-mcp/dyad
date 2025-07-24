@@ -28,7 +28,7 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
     refreshVersions,
     revertVersion,
   } = useVersions(appId);
-  const { isFavorited, toggleFavorite, isUpdatingFavorite } =
+  const { markFavorite, unmarkFavorite, isUpdatingFavorite } =
     useFavorites(appId);
   const [selectedVersionId, setSelectedVersionId] = useAtom(
     selectedVersionIdAtom,
@@ -93,7 +93,7 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
   };
 
   const versions = cachedVersions.length > 0 ? cachedVersions : liveVersions;
-
+  console.log("versions", versions);
   return (
     <div className="h-full border-t border-2 border-border w-full">
       <div className="p-2 border-b border-border flex items-center justify-between">
@@ -184,34 +184,36 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (!isUpdatingFavorite) {
-                              await toggleFavorite(version.oid);
+                              if (version.isFavorite) {
+                                await unmarkFavorite(version.oid);
+                              } else {
+                                await markFavorite(version.oid);
+                              }
                             }
                           }}
                           disabled={isUpdatingFavorite}
                           className={cn(
                             "p-1 rounded-md transition-colors hover:bg-(--background-lightest)",
-                            isFavorited(version.oid)
+                            version.isFavorite
                               ? "text-yellow-500"
                               : "text-gray-400 hover:text-yellow-500",
                             isUpdatingFavorite &&
                               "opacity-50 cursor-not-allowed",
                           )}
                           aria-label={
-                            isFavorited(version.oid)
+                            version.isFavorite
                               ? "Remove from favorites"
                               : "Add to favorites"
                           }
                         >
                           <Star
                             size={14}
-                            fill={
-                              isFavorited(version.oid) ? "currentColor" : "none"
-                            }
+                            fill={version.isFavorite ? "currentColor" : "none"}
                           />
                         </button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {isFavorited(version.oid)
+                        {version.isFavorite
                           ? "Remove from favorites"
                           : "Add to favorites"}
                       </TooltipContent>

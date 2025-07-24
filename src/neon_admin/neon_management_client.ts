@@ -164,6 +164,14 @@ export async function getNeonClient(): Promise<Api<unknown>> {
           ],
         },
       }),
+      deleteProjectBranch: async (projectId: string, branchId: string) => ({
+        data: {
+          branch: {
+            id: branchId,
+            project_id: projectId,
+          },
+        },
+      }),
     } as unknown as Api<unknown>;
   }
 

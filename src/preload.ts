@@ -112,6 +112,8 @@ const validInvokeChannels = [
   "list-favorites",
   "create-favorite",
   "delete-favorite",
+  "mark-favorite",
+  "unmark-favorite",
   // Test-only channels
   // These should ALWAYS be guarded with IS_TEST_BUILD in the main process.
   // We can't detect with IS_TEST_BUILD in the preload script because

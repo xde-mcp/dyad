@@ -65,8 +65,7 @@ export const messages = sqliteTable("messages", {
 // Define relations
 export const appsRelations = relations(apps, ({ many }) => ({
   chats: many(chats),
-  snapshots: many(snapshots),
-  favorites: many(favorites),
+  versions: many(versions),
 }));
 
 export const chatsRelations = relations(chats, ({ many, one }) => ({
@@ -138,14 +137,18 @@ export const languageModelsRelations = relations(
   }),
 );
 
-export const snapshots = sqliteTable(
-  "snapshots",
+export const versions = sqliteTable(
+  "versions",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     appId: integer("app_id")
       .notNull()
       .references(() => apps.id, { onDelete: "cascade" }),
     commitHash: text("commit_hash").notNull(),
+    isFavorite: integer("is_favorite", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    neonBranchId: text("neon_branch_id"),
     dbTimestamp: text("db_timestamp"), // Database timestamp for point-in-time recovery
     createdAt: integer("created_at", { mode: "timestamp" })
       .notNull()
@@ -155,56 +158,18 @@ export const snapshots = sqliteTable(
       .default(sql`(unixepoch())`),
   },
   (table) => [
-    // Unique constraint to prevent duplicate snapshots
-    unique("snapshots_app_commit_timestamp_unique").on(
-      table.appId,
-      table.commitHash,
-      table.dbTimestamp,
-    ),
+    // Unique constraint to prevent duplicate versions
+    unique("versions_app_commit_unique").on(table.appId, table.commitHash),
     // Performance indexes
-    index("snapshots_app_id_idx").on(table.appId),
-    index("snapshots_commit_hash_idx").on(table.commitHash),
-    index("snapshots_created_at_idx").on(table.createdAt),
+    index("versions_app_id_idx").on(table.appId),
+    index("versions_commit_hash_idx").on(table.commitHash),
+    index("versions_created_at_idx").on(table.createdAt),
   ],
 );
 
-export const favorites = sqliteTable(
-  "favorites",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-    appId: integer("app_id")
-      .notNull()
-      .references(() => apps.id, { onDelete: "cascade" }),
-    commitHash: text("commit_hash").notNull(),
-    neonBranchId: text("neon_branch_id"), // Optional Neon branch reference
-    createdAt: integer("created_at", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch())`),
-    updatedAt: integer("updated_at", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch())`),
-  },
-  (table) => [
-    // Unique constraint to prevent duplicate favorites per app/commit
-    unique("favorites_app_commit_unique").on(table.appId, table.commitHash),
-    // Performance indexes
-    index("favorites_app_id_idx").on(table.appId),
-    index("favorites_commit_hash_idx").on(table.commitHash),
-  ],
-);
-
-// Define relations for snapshots
-export const snapshotsRelations = relations(snapshots, ({ one }) => ({
+export const versionsRelations = relations(versions, ({ one }) => ({
   app: one(apps, {
-    fields: [snapshots.appId],
-    references: [apps.id],
-  }),
-}));
-
-// Define relations for favorites
-export const favoritesRelations = relations(favorites, ({ one }) => ({
-  app: one(apps, {
-    fields: [favorites.appId],
+    fields: [versions.appId],
     references: [apps.id],
   }),
 }));
