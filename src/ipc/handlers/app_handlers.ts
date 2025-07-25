@@ -47,6 +47,7 @@ import { safeSend } from "../utils/safe_sender";
 import { normalizePath } from "../../../shared/normalizePath";
 import { isServerFunction } from "@/supabase_admin/supabase_utils";
 import { getVercelTeamSlug } from "../utils/vercel_utils";
+import { storeBranchAtCurrentVersion } from "../utils/neon_store_branch_utils";
 
 async function copyDir(
   source: string,
@@ -646,6 +647,22 @@ export function registerAppHandlers() {
       // Check if the path is within the app directory (security check)
       if (!fullPath.startsWith(appPath)) {
         throw new Error("Invalid file path");
+      }
+
+      if (app.neonProjectId && app.neonDevelopmentBranchId) {
+        try {
+          await storeBranchAtCurrentVersion({
+            appId: app.id,
+            neonProjectId: app.neonProjectId,
+            neonBranchId: app.neonDevelopmentBranchId,
+          });
+        } catch (error) {
+          logger.error("Error creating Neon branch at current version:", error);
+          throw new Error(
+            "Could not create Neon branch; database versioning functionality is not working: " +
+              error,
+          );
+        }
       }
 
       // Ensure directory exists

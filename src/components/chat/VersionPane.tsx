@@ -59,6 +59,9 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
           await checkoutVersion({ appId, versionId: "main" });
         }
       }
+      if (!isVisible) {
+        setShowOnlyFavorites(false);
+      }
 
       wasVisibleRef.current = isVisible;
     }
@@ -89,14 +92,14 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
       setSelectedVersionId(version.oid);
       try {
         await checkoutVersion({ appId, versionId: version.oid });
-        if (version.hasDbSnapshot) {
-          await restartApp();
-        }
       } catch (error) {
         console.error("Could not checkout version, unselecting version", error);
         setSelectedVersionId(null);
       }
       await refreshApp();
+      if (version.dbBranch) {
+        await restartApp();
+      }
     }
   };
 
@@ -140,7 +143,11 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
       </div>
       <div className="overflow-y-auto h-[calc(100%-60px)]">
         {versions.length === 0 ? (
-          <div className="p-4 ">No versions available</div>
+          <div className="p-4 ">
+            {showOnlyFavorites
+              ? "No favorite versions available"
+              : "No versions available"}
+          </div>
         ) : (
           <div className="divide-y divide-border">
             {versions.map((version: Version) => (
@@ -165,7 +172,10 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                     <span className="font-medium text-xs">
                       Version{" "}
                       {allVersions.length -
-                        allVersions.findIndex((v) => v.oid === version.oid)}
+                        allVersions.findIndex(
+                          (v) => v.oid === version.oid,
+                        )}{" "}
+                      ({version.oid.slice(0, 7)})
                     </span>
                     {/* Star button for favorites */}
                     <Tooltip>
@@ -208,7 +218,7 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                           : "Add to favorites"}
                       </TooltipContent>
                     </Tooltip>
-                    {version.hasDbSnapshot && (
+                    {version.dbBranch && (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <div className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-md">
@@ -217,7 +227,8 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          Database snapshot available
+                          Database snapshot available at branch{" "}
+                          {version.dbBranch}
                         </TooltipContent>
                       </Tooltip>
                     )}
@@ -276,8 +287,10 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                             await revertVersion({
                               versionId: version.oid,
                             });
-                            if (version.hasDbSnapshot) {
-                              await restartApp();
+                            if (version.dbBranch) {
+                              // Intentionally do not await because this takes a long time
+                              // and we want to close the pane immediately
+                              restartApp();
                             }
                             // Close the pane after revert to force a refresh on next open
                             onClose();

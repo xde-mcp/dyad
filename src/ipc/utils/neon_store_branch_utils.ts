@@ -98,6 +98,7 @@ export async function storeBranchAtCommitHash({
 
     // If we have 6 or more versions with branches, delete the oldest non-favorite
     if (versionsWithBranches.length >= 6) {
+      console.log("VERSIONS WITH BRANCHES", versionsWithBranches);
       // Find the oldest non-favorite version with a branch
       const oldestNonFavorite = versionsWithBranches.find(
         (version) => !version.isFavorite && version.neonBranchId,
