@@ -86,7 +86,6 @@ export async function processFullResponseActions(
     chatWithApp.app.neonProjectId &&
     chatWithApp.app.neonDevelopmentBranchId
   ) {
-    // CREATE NEON BRANCH AT CURRENT VERSION
     try {
       await storeBranchAtCurrentVersion({
         appId: chatWithApp.app.id,

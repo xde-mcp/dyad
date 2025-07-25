@@ -102,7 +102,7 @@ export interface Version {
   oid: string;
   message: string;
   timestamp: number;
-  hasDbSnapshot?: boolean;
+  dbBranch?: string | null;
   isFavorite: boolean;
 }
 

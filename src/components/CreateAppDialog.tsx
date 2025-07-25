@@ -20,6 +20,7 @@ import { useRouter } from "@tanstack/react-router";
 
 import { Loader2 } from "lucide-react";
 import { neonTemplateHook } from "@/client_logic/template_hook";
+import { showError } from "@/lib/toast";
 
 interface CreateAppDialogProps {
   open: boolean;
@@ -67,6 +68,7 @@ export function CreateAppDialog({
       setAppName("");
       onOpenChange(false);
     } catch (error) {
+      showError(error as any);
       // Error is already handled by createApp hook or shown above
       console.error("Error creating app:", error);
     } finally {
