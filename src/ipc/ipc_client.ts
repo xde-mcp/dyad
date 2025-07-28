@@ -828,6 +828,15 @@ export class IpcClient {
 
   // --- End Neon Management ---
 
+  // --- Portal Management ---
+  public async portalMigrateCreate(params: {
+    appId: number;
+  }): Promise<{ output: string }> {
+    return this.ipcRenderer.invoke("portal:migrate-create", params);
+  }
+
+  // --- End Portal Management ---
+
   public async getSystemDebugInfo(): Promise<SystemDebugInfo> {
     return this.ipcRenderer.invoke("get-system-debug-info");
   }

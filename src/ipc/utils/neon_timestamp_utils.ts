@@ -129,8 +129,6 @@ export async function storeDbTimestampAtCurrentVersion({
     return { timestamp: currentTimestamp };
   } catch (error) {
     logger.error("Error in storeDbTimestampAtCurrentVersion:", error);
-    throw new Error(
-      "Could not store DB timestamp at current version: " + error,
-    );
+    throw error;
   }
 }

@@ -27,6 +27,18 @@ export async function neonTemplateHook({
         key: "PAYLOAD_SECRET",
         value: uuidv4(),
       },
+      {
+        key: "NEXT_PUBLIC_SERVER_URL",
+        value: "http://localhost:32100",
+      },
+      {
+        key: "GMAIL_USER",
+        value: "example@gmail.com",
+      },
+      {
+        key: "GOOGLE_APP_PASSWORD",
+        value: "GENERATE AT https://myaccount.google.com/apppasswords",
+      },
     ],
   });
   console.log("App env vars set");
