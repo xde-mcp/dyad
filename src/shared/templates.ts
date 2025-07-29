@@ -6,6 +6,7 @@ export interface Template {
   githubUrl?: string;
   isOfficial: boolean;
   isExperimental?: boolean;
+  requiresNeon?: boolean;
 }
 
 // API Template interface from the external API
@@ -50,5 +51,6 @@ export const localTemplatesData: Template[] = [
     githubUrl: "https://github.com/dyad-sh/portal-mini-store-template",
     isOfficial: true,
     isExperimental: true,
+    requiresNeon: true,
   },
 ];

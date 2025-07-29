@@ -47,6 +47,12 @@ export function registerPortalHandlers() {
           const output = data.toString();
           stdout += output;
           logger.info(`migrate:create stdout: ${output}`);
+          if (output.includes("created or renamed from another")) {
+            process.stdin.write(`\r\n`);
+            logger.info(
+              `App ${appId} (PID: ${process.pid}) wrote enter to stdin to automatically respond to drizzle migrate input`,
+            );
+          }
         });
 
         process.stderr?.on("data", (data) => {
@@ -64,6 +70,7 @@ export function registerPortalHandlers() {
               logger.info(
                 `migrate:create completed successfully for app ${appId}`,
               );
+              resolve(combinedOutput);
             } else {
               logger.error(
                 `migrate:create completed successfully for app ${appId} but no migration was created`,
@@ -74,7 +81,6 @@ export function registerPortalHandlers() {
                 ),
               );
             }
-            resolve(combinedOutput);
           } else {
             logger.error(
               `migrate:create failed for app ${appId} with exit code ${code}`,

@@ -138,6 +138,12 @@ async function executeAppLocalNode({
     // Check if this is an interactive prompt requiring user input
     const inputRequestPattern = /\s*›\s*\([yY]\/[nN]\)\s*$/;
     const isInputRequest = inputRequestPattern.test(message);
+    if (message.includes("created or renamed from another")) {
+      process.stdin.write(`\r\n`);
+      logger.info(
+        `App ${appId} (PID: ${process.pid}) wrote enter to stdin to automatically respond to drizzle push input`,
+      );
+    }
 
     if (isInputRequest) {
       // Send special input-requested event for interactive prompts

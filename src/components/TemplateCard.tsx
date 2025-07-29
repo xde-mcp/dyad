@@ -6,6 +6,7 @@ import { CommunityCodeConsentDialog } from "./CommunityCodeConsentDialog";
 import type { Template } from "@/shared/templates";
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
+import { showWarning } from "@/lib/toast";
 
 interface TemplateCardProps {
   template: Template;
@@ -27,6 +28,11 @@ export const TemplateCard: React.FC<TemplateCardProps> = ({
     // If it's a community template and user hasn't accepted community code yet, show dialog
     if (!template.isOfficial && !settings?.acceptedCommunityCode) {
       setShowConsentDialog(true);
+      return;
+    }
+
+    if (template.requiresNeon && !settings?.neon?.accessToken) {
+      showWarning("Please connect your Neon account to use this template.");
       return;
     }
 
