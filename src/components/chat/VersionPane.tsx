@@ -23,7 +23,7 @@ interface VersionPaneProps {
 
 export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
   const appId = useAtomValue(selectedAppIdAtom);
-  const { refreshApp } = useLoadApp(appId);
+  const { refreshApp, app } = useLoadApp(appId);
   const { restartApp } = useRunApp();
   const {
     versions: liveVersions,
@@ -54,6 +54,9 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
         setSelectedVersionId(null);
         if (appId) {
           await checkoutVersion({ appId, versionId: "main" });
+          if (app?.neonProjectId) {
+            await restartApp();
+          }
         }
       }
 
@@ -226,12 +229,13 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
-                            setSelectedVersionId(null);
-                            // Close the pane after revert to force a refresh on next open
-                            onClose();
+
                             await revertVersion({
                               versionId: version.oid,
                             });
+                            setSelectedVersionId(null);
+                            // Close the pane after revert to force a refresh on next open
+                            onClose();
                             if (version.dbTimestamp) {
                               await restartApp();
                             }

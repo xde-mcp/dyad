@@ -257,7 +257,3 @@ export function registerNeonHandlers() {
     logger.info("Sent fake neon deep-link-received event during testing.");
   });
 }
-
-export function isLockedError(error: any): boolean {
-  return error.response?.status === 423;
-}

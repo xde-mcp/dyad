@@ -356,11 +356,6 @@ export function registerVersionHandlers() {
                 role_name: "neondb_owner",
               });
 
-              await updatePostgresUrlEnvVar({
-                appPath: app.path,
-                connectionUri: connectionUri.data.uri,
-              });
-
               await restoreBranchForPreview({
                 appId,
                 dbTimestamp: version.neonDbTimestamp,
@@ -368,6 +363,14 @@ export function registerVersionHandlers() {
                 previewBranchId: app.neonPreviewBranchId,
                 developmentBranchId: app.neonDevelopmentBranchId,
               });
+
+              await updatePostgresUrlEnvVar({
+                appPath: app.path,
+                connectionUri: connectionUri.data.uri,
+              });
+              logger.info(
+                `Switched Postgres to preview branch for app ${appId} commit ${version.commitHash} dbTimestamp=${version.neonDbTimestamp}`,
+              );
             }
           }
         }

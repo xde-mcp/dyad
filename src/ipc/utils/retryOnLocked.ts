@@ -1,4 +1,10 @@
-import { isLockedError, logger } from "../handlers/neon_handlers";
+import log from "electron-log";
+
+export const logger = log.scope("retryOnLocked");
+
+export function isLockedError(error: any): boolean {
+  return error.response?.status === 423;
+}
 
 // Retry configuration
 const RETRY_CONFIG = {
