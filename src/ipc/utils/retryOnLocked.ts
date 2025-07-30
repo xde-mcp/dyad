@@ -8,9 +8,9 @@ export function isLockedError(error: any): boolean {
 
 // Retry configuration
 const RETRY_CONFIG = {
-  maxRetries: 6,
+  maxRetries: 5,
   baseDelay: 1000, // 1 second
-  maxDelay: 90_000, // 90 seconds
+  maxDelay: 30_000, // 30 seconds
   jitterFactor: 0.1, // 10% jitter
 };
 

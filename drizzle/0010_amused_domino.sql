@@ -1,0 +1,1 @@
+ALTER TABLE `versions` ADD `neon_branch_id` text;

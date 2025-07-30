@@ -3,14 +3,24 @@ import { useAtomValue } from "jotai";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-import {} from "@/components/ui/alert-dialog";
-import { Database, GitBranch } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Database, GitBranch, Trash2 } from "lucide-react";
 import { selectedAppIdAtom } from "@/atoms/appAtoms";
 import { useLoadApp } from "@/hooks/useLoadApp";
 import { IpcClient } from "@/ipc/ipc_client";
 import type { GetNeonProjectResponse, NeonBranch } from "@/ipc/ipc_types";
 import { NeonDisconnectButton } from "@/components/NeonDisconnectButton";
+import { useDeleteNeonBranch } from "@/hooks/useDeleteNeonBranch";
 
 const getBranchTypeColor = (type: NeonBranch["type"]) => {
   switch (type) {
@@ -34,7 +44,8 @@ const formatDate = (dateString: string) => {
 export const NeonConfigure = () => {
   const selectedAppId = useAtomValue(selectedAppIdAtom);
   const { app } = useLoadApp(selectedAppId);
-  const [] = useState<string | null>(null);
+  const [branchToDelete, setBranchToDelete] = useState<NeonBranch | null>(null);
+  const { deleteBranch, isDeleting } = useDeleteNeonBranch();
 
   // Query to get Neon project information
   const {
@@ -170,6 +181,19 @@ export const NeonConfigure = () => {
                     Updated: {formatDate(branch.lastUpdated)}
                   </div>
                 </div>
+                {/* Delete button - only show for snapshot branches */}
+                {branch.type === "snapshot" && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setBranchToDelete(branch)}
+                    disabled={isDeleting}
+                    className="ml-2 h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    title={`Delete branch ${branch.branchName}`}
+                  >
+                    <Trash2 size={14} />
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -178,6 +202,55 @@ export const NeonConfigure = () => {
         {/* Disconnect Button */}
         <div className="pt-4 border-t"></div>
       </CardContent>
+
+      {/* Delete Branch Confirmation Dialog */}
+      <AlertDialog
+        open={!!branchToDelete}
+        onOpenChange={(open) => !open && setBranchToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Branch</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Are you sure you want to delete the branch{" "}
+                <strong>"{branchToDelete?.branchName}"</strong>?
+              </p>
+              <p className="text-red-600 font-medium">
+                This action is permanent and cannot be undone.
+              </p>
+              <p>
+                This will delete the branch from Neon and clear all associated
+                version data.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (branchToDelete && selectedAppId) {
+                  try {
+                    await deleteBranch({
+                      appId: selectedAppId,
+                      branchId: branchToDelete.branchId,
+                      branchName: branchToDelete.branchName,
+                    });
+                    setBranchToDelete(null);
+                  } catch (error) {
+                    // Error handling is done in the hook
+                    console.error("Failed to delete branch:", error);
+                  }
+                }
+              }}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+            >
+              {isDeleting ? "Deleting..." : "Delete Branch"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };

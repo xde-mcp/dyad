@@ -103,6 +103,7 @@ export interface Version {
   message: string;
   timestamp: number;
   dbTimestamp?: string | null;
+  dbBranchId?: string | null;
 }
 
 export type BranchResult = { branch: string };
@@ -382,6 +383,12 @@ export interface GetNeonProjectResponse {
   projectName: string;
   orgId: string;
   branches: NeonBranch[];
+}
+
+export interface DeleteNeonBranchParams {
+  appId: number;
+  branchId: string;
+  branchName: string;
 }
 
 export interface RevertVersionParams {

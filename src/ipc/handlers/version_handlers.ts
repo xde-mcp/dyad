@@ -1,6 +1,6 @@
 import { db } from "../../db";
 import { apps, messages, versions } from "../../db/schema";
-import { desc, eq, and, gt } from "drizzle-orm";
+import { desc, eq, and, gt, isNull, isNotNull } from "drizzle-orm";
 import type {
   Version,
   BranchResult,
@@ -36,20 +36,20 @@ async function restoreBranchForPreview({
   dbTimestamp,
   neonProjectId,
   previewBranchId,
-  developmentBranchId,
+  restoreFromBranchId,
 }: {
   appId: number;
   dbTimestamp: string;
   neonProjectId: string;
   previewBranchId: string;
-  developmentBranchId: string;
+  restoreFromBranchId: string;
 }): Promise<void> {
   try {
     const neonClient = await getNeonClient();
     await retryOnLocked(
       () =>
         neonClient.restoreProjectBranch(neonProjectId, previewBranchId, {
-          source_branch_id: developmentBranchId,
+          source_branch_id: restoreFromBranchId,
           source_timestamp: dbTimestamp,
         }),
       `Restore preview branch ${previewBranchId} for app ${appId}`,
@@ -94,11 +94,16 @@ export function registerVersionHandlers() {
     // Create a map of commitHash -> snapshot info for quick lookup
     const snapshotMap = new Map<
       string,
-      { neonDbTimestamp: string | null; createdAt: Date }
+      {
+        neonDbTimestamp: string | null;
+        neonBranchId: string | null;
+        createdAt: Date;
+      }
     >();
     for (const snapshot of appSnapshots) {
       snapshotMap.set(snapshot.commitHash, {
         neonDbTimestamp: snapshot.neonDbTimestamp,
+        neonBranchId: snapshot.neonBranchId,
         createdAt: snapshot.createdAt,
       });
     }
@@ -110,6 +115,7 @@ export function registerVersionHandlers() {
         message: commit.commit.message,
         timestamp: commit.commit.author.timestamp,
         dbTimestamp: snapshotInfo?.neonDbTimestamp,
+        dbBranchId: snapshotInfo?.neonBranchId,
       };
     }) satisfies Version[];
   });
@@ -167,12 +173,6 @@ export function registerVersionHandlers() {
         }
 
         const appPath = getDyadAppPath(app.path);
-        // Get the current commit hash before reverting
-        const currentCommitHash = await git.resolveRef({
-          fs,
-          dir: appPath,
-          ref: "main",
-        });
 
         await gitCheckout({
           path: appPath,
@@ -244,7 +244,7 @@ export function registerVersionHandlers() {
           });
           if (version && version.neonDbTimestamp) {
             try {
-              const preserveBranchName = `preserve_${currentCommitHash}-${Date.now()}`;
+              const preserveBranchName = `backup-development-${Date.now()}`;
               const neonClient = await getNeonClient();
               const response = await retryOnLocked(
                 () =>
@@ -252,7 +252,8 @@ export function registerVersionHandlers() {
                     app.neonProjectId!,
                     app.neonDevelopmentBranchId!,
                     {
-                      source_branch_id: app.neonDevelopmentBranchId!,
+                      source_branch_id:
+                        version.neonBranchId || app.neonDevelopmentBranchId!,
                       source_timestamp: version.neonDbTimestamp!,
                       preserve_under_name: preserveBranchName,
                     },
@@ -263,24 +264,34 @@ export function registerVersionHandlers() {
               if (!preserveBranchId) {
                 throw new Error("Preserve branch ID not found");
               }
-              logger.info(
-                `Deleting preserve branch ${preserveBranchId} for app ${appId}`,
-              );
-              try {
-                await retryOnLocked(
-                  () =>
-                    neonClient.deleteProjectBranch(
-                      app.neonProjectId!,
-                      preserveBranchId,
+
+              // Look up all the versions for the given app id and
+              // if there's a db timestamp WITHOUT a neon branch id,
+              // then update the version to include the neon branch id.
+              const versionsToUpdate = await db.query.versions.findMany({
+                where: and(
+                  eq(versions.appId, appId),
+                  isNull(versions.neonBranchId),
+                  // Only update versions that have a neon db timestamp
+                  isNotNull(versions.neonDbTimestamp),
+                ),
+              });
+
+              if (versionsToUpdate.length > 0) {
+                await db
+                  .update(versions)
+                  .set({ neonBranchId: preserveBranchId })
+                  .where(
+                    and(
+                      eq(versions.appId, appId),
+                      isNull(versions.neonBranchId),
+                      isNotNull(versions.neonDbTimestamp),
                     ),
-                  `Delete preserve branch ${preserveBranchId} for app ${appId}`,
-                  { retryBranchWithChildError: true },
+                  );
+
+                logger.info(
+                  `Updated ${versionsToUpdate.length} versions with preserve branch ID ${preserveBranchId} for app ${appId}`,
                 );
-              } catch (error) {
-                const errorMessage = getNeonErrorMessage(error);
-                logger.error("Error in deleteProjectBranch:", errorMessage);
-                warningMessage = `Failed to delete preserve branch. Delete branch ${preserveBranchName} manually in Neon Console.`;
-                // Do not throw, just log because the user can later delete the branch manually.
               }
             } catch (error) {
               const errorMessage = getNeonErrorMessage(error);
@@ -371,7 +382,8 @@ export function registerVersionHandlers() {
                 dbTimestamp: version.neonDbTimestamp,
                 neonProjectId: app.neonProjectId,
                 previewBranchId: app.neonPreviewBranchId,
-                developmentBranchId: app.neonDevelopmentBranchId,
+                restoreFromBranchId:
+                  version.neonBranchId || app.neonDevelopmentBranchId,
               });
 
               await updatePostgresUrlEnvVar({

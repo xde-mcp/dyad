@@ -173,7 +173,7 @@ export function VersionPane({ isVisible, onClose }: VersionPaneProps) {
                             <TooltipContent>
                               {isExpired
                                 ? "DB snapshot may have expired (older than 24 hours)"
-                                : `Database snapshot available at timestamp ${version.dbTimestamp}`}
+                                : `Database snapshot available at timestamp ${version.dbTimestamp} on branch ${version.dbBranchId ?? "default"}`}
                             </TooltipContent>
                           </Tooltip>
                         );

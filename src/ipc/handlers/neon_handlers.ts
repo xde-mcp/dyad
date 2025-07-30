@@ -13,6 +13,7 @@ import {
   GetNeonProjectParams,
   GetNeonProjectResponse,
   NeonBranch,
+  DeleteNeonBranchParams,
 } from "../ipc_types";
 import { db } from "../../db";
 import { apps } from "../../db/schema";
@@ -20,6 +21,7 @@ import { eq } from "drizzle-orm";
 import { ipcMain } from "electron";
 import { EndpointType } from "@neondatabase/api-client";
 import { retryOnLocked } from "../utils/retryOnLocked";
+import { deleteNeonBranch } from "../utils/neon_branch_utils";
 
 export const logger = log.scope("neon_handlers");
 
@@ -233,6 +235,47 @@ export function registerNeonHandlers() {
       } catch (error) {
         logger.error(
           `Failed to get Neon project info for app ${appId}:`,
+          error,
+        );
+        throw error;
+      }
+    },
+  );
+
+  ipcMain.handle(
+    "neon:delete-branch",
+    async (_, { appId, branchId, branchName }: DeleteNeonBranchParams) => {
+      logger.info(
+        `Deleting Neon branch ${branchId} (${branchName}) for app ${appId}`,
+      );
+
+      try {
+        // Get the app to find the project ID
+        const app = await db
+          .select()
+          .from(apps)
+          .where(eq(apps.id, appId))
+          .limit(1);
+
+        if (app.length === 0) {
+          throw new Error(`App with ID ${appId} not found`);
+        }
+
+        const appData = app[0];
+        if (!appData.neonProjectId) {
+          throw new Error(`No Neon project found for app ${appId}`);
+        }
+
+        // Use the utility function to delete the branch
+        return await deleteNeonBranch(
+          appId,
+          appData.neonProjectId,
+          branchId,
+          branchName,
+        );
+      } catch (error) {
+        logger.error(
+          `Failed to delete Neon branch ${branchId} for app ${appId}:`,
           error,
         );
         throw error;
