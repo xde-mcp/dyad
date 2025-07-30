@@ -7,6 +7,9 @@ import { getDyadAppPath } from "@/paths/paths";
 import { EnvVar } from "../ipc_types";
 import path from "path";
 import fs from "fs";
+import log from "electron-log";
+
+const logger = log.scope("app_env_var_utils");
 
 export const ENV_FILE_NAME = ".env.local";
 
@@ -30,6 +33,47 @@ export async function updatePostgresUrlEnvVar({
   }
   const envFileContents = serializeEnvFile(envVars);
   await fs.promises.writeFile(getEnvFilePath({ appPath }), envFileContents);
+}
+
+export async function updateDbPushEnvVar({
+  appPath,
+  disabled,
+}: {
+  appPath: string;
+  disabled: boolean;
+}) {
+  try {
+    // Try to read existing env file
+    let envVars: EnvVar[];
+    try {
+      const content = await readEnvFile({ appPath });
+      envVars = parseEnvFile(content);
+    } catch {
+      // If file doesn't exist, start with empty array
+      envVars = [];
+    }
+
+    // Update or add DYAD_DISABLE_DB_PUSH
+    const existingVar = envVars.find(
+      (envVar) => envVar.key === "DYAD_DISABLE_DB_PUSH",
+    );
+    if (existingVar) {
+      existingVar.value = disabled ? "true" : "false";
+    } else {
+      envVars.push({
+        key: "DYAD_DISABLE_DB_PUSH",
+        value: disabled ? "true" : "false",
+      });
+    }
+
+    const envFileContents = serializeEnvFile(envVars);
+    await fs.promises.writeFile(getEnvFilePath({ appPath }), envFileContents);
+  } catch (error) {
+    logger.error(
+      `Failed to update DB push environment variable for app ${appPath}: ${error}`,
+    );
+    throw error;
+  }
 }
 
 export async function readPostgresUrlFromEnvFile({

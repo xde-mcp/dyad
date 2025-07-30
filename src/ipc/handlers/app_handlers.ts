@@ -102,7 +102,7 @@ async function executeAppLocalNode({
   appId: number;
   event: Electron.IpcMainInvokeEvent;
 }): Promise<void> {
-  const process = spawn(
+  const spawnedProcess = spawn(
     "(pnpm install && pnpm run dev --port 32100) || (npm install --legacy-peer-deps && npm run dev -- --port 32100)",
     [],
     {
@@ -114,11 +114,11 @@ async function executeAppLocalNode({
   );
 
   // Check if process spawned correctly
-  if (!process.pid) {
+  if (!spawnedProcess.pid) {
     // Attempt to capture any immediate errors if possible
     let errorOutput = "";
-    process.stderr?.on("data", (data) => (errorOutput += data));
-    await new Promise((resolve) => process.on("error", resolve)); // Wait for error event
+    spawnedProcess.stderr?.on("data", (data) => (errorOutput += data));
+    await new Promise((resolve) => spawnedProcess.on("error", resolve)); // Wait for error event
     throw new Error(
       `Failed to spawn process for app ${appId}. Error: ${
         errorOutput || "Unknown spawn error"
@@ -128,20 +128,25 @@ async function executeAppLocalNode({
 
   // Increment the counter and store the process reference with its ID
   const currentProcessId = processCounter.increment();
-  runningApps.set(appId, { process, processId: currentProcessId });
+  runningApps.set(appId, {
+    process: spawnedProcess,
+    processId: currentProcessId,
+  });
 
   // Log output
-  process.stdout?.on("data", async (data) => {
+  spawnedProcess.stdout?.on("data", async (data) => {
     const message = util.stripVTControlCharacters(data.toString());
-    logger.debug(`App ${appId} (PID: ${process.pid}) stdout: ${message}`);
+    logger.debug(
+      `App ${appId} (PID: ${spawnedProcess.pid}) stdout: ${message}`,
+    );
 
     // Check if this is an interactive prompt requiring user input
     const inputRequestPattern = /\s*›\s*\([yY]\/[nN]\)\s*$/;
     const isInputRequest = inputRequestPattern.test(message);
     if (message.includes("created or renamed from another")) {
-      process.stdin.write(`\r\n`);
+      spawnedProcess.stdin.write(`\r\n`);
       logger.info(
-        `App ${appId} (PID: ${process.pid}) wrote enter to stdin to automatically respond to drizzle push input`,
+        `App ${appId} (PID: ${spawnedProcess.pid}) wrote enter to stdin to automatically respond to drizzle push input`,
       );
     }
 
@@ -175,9 +180,11 @@ async function executeAppLocalNode({
     }
   });
 
-  process.stderr?.on("data", (data) => {
+  spawnedProcess.stderr?.on("data", (data) => {
     const message = util.stripVTControlCharacters(data.toString());
-    logger.error(`App ${appId} (PID: ${process.pid}) stderr: ${message}`);
+    logger.error(
+      `App ${appId} (PID: ${spawnedProcess.pid}) stderr: ${message}`,
+    );
     safeSend(event.sender, "app:output", {
       type: "stderr",
       message,
@@ -186,19 +193,19 @@ async function executeAppLocalNode({
   });
 
   // Handle process exit/close
-  process.on("close", (code, signal) => {
+  spawnedProcess.on("close", (code, signal) => {
     logger.log(
-      `App ${appId} (PID: ${process.pid}) process closed with code ${code}, signal ${signal}.`,
+      `App ${appId} (PID: ${spawnedProcess.pid}) process closed with code ${code}, signal ${signal}.`,
     );
-    removeAppIfCurrentProcess(appId, process);
+    removeAppIfCurrentProcess(appId, spawnedProcess);
   });
 
   // Handle errors during process lifecycle (e.g., command not found)
-  process.on("error", (err) => {
+  spawnedProcess.on("error", (err) => {
     logger.error(
-      `Error in app ${appId} (PID: ${process.pid}) process: ${err.message}`,
+      `Error in app ${appId} (PID: ${spawnedProcess.pid}) process: ${err.message}`,
     );
-    removeAppIfCurrentProcess(appId, process);
+    removeAppIfCurrentProcess(appId, spawnedProcess);
     // Note: We don't throw here as the error is asynchronous. The caller got a success response already.
     // Consider adding ipcRenderer event emission to notify UI of the error.
   });

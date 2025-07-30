@@ -20,7 +20,10 @@ import {
   getNeonClient,
   getNeonErrorMessage,
 } from "../../neon_admin/neon_management_client";
-import { updatePostgresUrlEnvVar } from "../utils/app_env_var_utils";
+import {
+  updatePostgresUrlEnvVar,
+  updateDbPushEnvVar,
+} from "../utils/app_env_var_utils";
 import { storeDbTimestampAtCurrentVersion } from "../utils/neon_timestamp_utils";
 import { retryOnLocked } from "../utils/retryOnLocked";
 
@@ -337,6 +340,13 @@ export function registerVersionHandlers() {
               `Switching Postgres to preview branch for app ${appId}`,
             );
 
+            // Regardless of whether we have a timestamp or not, we want to disable DB push
+            // while we're checking out an earlier version
+            await updateDbPushEnvVar({
+              appPath: app.path,
+              disabled: true,
+            });
+
             const version = await db.query.versions.findFirst({
               where: and(
                 eq(versions.appId, appId),
@@ -407,5 +417,10 @@ async function switchPostgresToDevelopmentBranch({
   await updatePostgresUrlEnvVar({
     appPath,
     connectionUri: connectionUri.data.uri,
+  });
+
+  await updateDbPushEnvVar({
+    appPath,
+    disabled: false,
   });
 }

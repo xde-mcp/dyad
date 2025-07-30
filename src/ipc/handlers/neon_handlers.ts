@@ -60,35 +60,36 @@ export function registerNeonHandlers() {
         }
 
         const project = response.data.project;
+        const developmentBranch = response.data.branch;
 
-        // Create a development branch with retry on locked errors
-        const branchResponse = await retryOnLocked(
-          () =>
-            neonClient.createProjectBranch(project.id, {
-              endpoints: [{ type: EndpointType.ReadWrite }],
-              branch: {
-                init_source: "schema-only",
-                name: "development",
-              },
-            }),
-          `Create development branch for project ${project.id}`,
-        );
+        // // Create a development branch with retry on locked errors
+        // const branchResponse = await retryOnLocked(
+        //   () =>
+        //     neonClient.createProjectBranch(project.id, {
+        //       endpoints: [{ type: EndpointType.ReadWrite }],
+        //       branch: {
+        //         init_source: "schema-only",
+        //         name: "development",
+        //       },
+        //     }),
+        //   `Create development branch for project ${project.id}`,
+        // );
 
-        if (
-          !branchResponse.data.branch ||
-          !branchResponse.data.connection_uris
-        ) {
-          throw new Error(
-            "Failed to create development branch: No branch data returned.",
-          );
-        }
+        // if (
+        //   !branchResponse.data.branch ||
+        //   !branchResponse.data.connection_uris
+        // ) {
+        //   throw new Error(
+        //     "Failed to create development branch: No branch data returned.",
+        //   );
+        // }
 
-        const developmentBranch = branchResponse.data.branch;
+        // const developmentBranch = branchResponse.data.branch;
 
         const previewBranchResponse = await retryOnLocked(
           () =>
             neonClient.createProjectBranch(project.id, {
-              endpoints: [{ type: EndpointType.ReadWrite }],
+              endpoints: [{ type: EndpointType.ReadOnly }],
               branch: {
                 name: "preview",
                 parent_id: developmentBranch.id,
@@ -124,8 +125,7 @@ export function registerNeonHandlers() {
         return {
           id: project.id,
           name: project.name,
-          connectionString:
-            branchResponse.data.connection_uris[0].connection_uri,
+          connectionString: response.data.connection_uris[0].connection_uri,
           branchId: developmentBranch.id,
         };
       } catch (error: any) {
