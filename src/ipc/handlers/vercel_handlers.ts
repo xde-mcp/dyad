@@ -372,6 +372,37 @@ async function handleConnectToExistingProject(
       throw new Error("Project not found. Please check the project ID.");
     }
 
+    // Update Vercel project to use the app's github repo
+    const app = await db.query.apps.findFirst({ where: eq(apps.id, appId) });
+    if (!app) {
+      throw new Error("App not found.");
+    }
+
+    // Check if app has GitHub repository configured
+    if (!app.githubOrg || !app.githubRepo) {
+      throw new Error(
+        "App must be connected to a GitHub repository before connecting to a Vercel project.",
+      );
+    }
+
+    // Note: The current version of the Vercel SDK might not support updating gitRepository
+    // after project creation. This is typically configured during project creation.
+    // For now, we'll log this information and proceed with the connection.
+    logger.info(
+      `Connecting Vercel project ${projectData.id} to app with GitHub repo: ${app.githubOrg}/${app.githubRepo}`,
+    );
+    await vercel.projects.updateProject({
+      idOrName: projectId,
+      requestBody: {
+        link: {
+          type: "github",
+          org: app.githubOrg,
+          repo: app.githubRepo,
+          ref: app.githubBranch || "main",
+        },
+      },
+    });
+
     // Get the default team ID
     const teamId = await getDefaultTeamId(accessToken);
 
